@@ -22,8 +22,8 @@ pipeline {
             steps {
                 sh '''
                     # Upgrade pip and install dependencies globally inside the container
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
+                    sudo pip install --upgrade pip
+                    sudo pip install -r requirements.txt
                 '''
             }
         }
