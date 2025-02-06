@@ -2,14 +2,14 @@ pipeline {
     agent {
         docker {
             image 'python:3.10-slim'
-           args '--user root'  // Run as root
+            args '--user root'  // Run as root
         }
     }
 
     environment {
-        EC2_HOST = credentials('EC2_HOST')
-        EC2_USER = credentials('EC2_USER')
-        SSH_KEY = credentials('SSH_KEY')
+        EC2_HOST = credentials('EC2_HOST')          // EC2 instance IP
+        EC2_USER = credentials('EC2_USER')          // EC2 username (e.g., ubuntu)
+        SSH_KEY_ID = credentials('SSH_KEY_ID')      // ID of the SSH private key credential in Jenkins
     }
 
     stages {
@@ -44,17 +44,15 @@ pipeline {
 
         stage('Deploy Model to EC2') {
             steps {
-                sh '''
-                    # Store the SSH key securely
-                    echo "$SSH_KEY" > ec2_server.pem
-                    chmod 600 ec2_server.pem
-                    
-                    # Ensure the model directory exists on EC2
-                    ssh -o StrictHostKeyChecking=no -i ec2_server.pem $EC2_USER@$EC2_HOST "mkdir -p /home/$EC2_USER/models && chmod 755 /home/$EC2_USER/models"
+                sshagent(credentials: ["${SSH_KEY_ID}"]) {
+                    sh '''
+                        # Ensure the model directory exists on EC2
+                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} "mkdir -p /home/${EC2_USER}/models && chmod 755 /home/${EC2_USER}/models"
 
-                    # Copy the trained model to EC2
-                    scp -o StrictHostKeyChecking=no -i ec2_server.pem models/model_*.pkl $EC2_USER@$EC2_HOST:/home/$EC2_USER/models/
-                '''
+                        # Copy the trained model to EC2
+                        scp -o StrictHostKeyChecking=no models/model_*.pkl ${EC2_USER}@${EC2_HOST}:/home/${EC2_USER}/models/
+                    '''
+                }
             }
         }
     }
