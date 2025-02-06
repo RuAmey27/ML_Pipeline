@@ -22,7 +22,7 @@ pipeline {
             steps {
                 // Create a virtual environment and install dependencies inside Docker container
                 sh '''
-                    python3 -m venv myenv
+                    python -m venv myenv
                     source myenv/bin/activate
                     pip install --upgrade pip
                     pip install -r requirements.txt
