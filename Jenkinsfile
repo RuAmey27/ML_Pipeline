@@ -21,11 +21,13 @@ pipeline {
         stage('Set Up Python Environment') {
             steps {
                 sh '''
-                    # Install dependencies inside Docker
-                    python -m venv myenv
+                    # Install venv if not present
+                    python3 -m ensurepip --upgrade
+                    python3 -m pip install virtualenv
+                    python3 -m venv myenv
                     source myenv/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
+                    python3 -m pip install --upgrade pip
+                    python3 -m pip install -r requirements.txt
                 '''
             }
         }
