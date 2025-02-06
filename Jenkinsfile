@@ -1,7 +1,7 @@
 pipeline {
     agent {
         docker {
-            image 'python:3.10-slim'  // Use the Python 3.10 slim image
+            image 'python:3.10-slim'  // Using the Python 3.10 slim image
         }
     }
 
@@ -21,13 +21,16 @@ pipeline {
         stage('Set Up Python Environment') {
             steps {
                 sh '''
-                    # Install venv if not present
-                    python3 -m ensurepip --upgrade
-                    python3 -m pip install virtualenv
-                    python3 -m venv myenv
-                    source myenv/bin/activate
+                    # Upgrade pip and install virtualenv locally
                     python3 -m pip install --upgrade pip
-                    python3 -m pip install -r requirements.txt
+                    python3 -m pip install --user virtualenv
+
+                    # Create and activate virtual environment
+                    python3 -m virtualenv myenv
+                    source myenv/bin/activate
+
+                    # Install dependencies from requirements.txt
+                    pip install -r requirements.txt
                 '''
             }
         }
@@ -55,7 +58,7 @@ pipeline {
                     ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
 
                     # Verify the SSH key and create directory if not exists
-                    ssh -i ec2_server.pem $EC2_USER@$EC2_HOST 'sudo mkdir -p /home/$EC2_USER/models'
+                    ssh -i ec2_server.pem $EC2_USER@$EC2_HOST '[ -d /home/$EC2_USER/models ] || sudo mkdir -p /home/$EC2_USER/models'
 
                     # Copy the trained model to EC2
                     scp -i ec2_server.pem models/model_*.pkl $EC2_USER@$EC2_HOST:/home/$EC2_USER/models/
