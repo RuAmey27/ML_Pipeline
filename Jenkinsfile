@@ -1,14 +1,14 @@
 pipeline {
     agent {
         docker {
-            image 'python:3.10-slim'  // Using the Python 3.10 slim image
+            image 'python:3.10-slim'  // Using Python 3.10 slim Docker image
         }
     }
 
     environment {
         EC2_HOST = credentials('EC2_HOST')  // EC2 Instance IP or Hostname
         EC2_USER = credentials('EC2_USER')  // EC2 Instance Username (e.g., ubuntu)
-        SSH_KEY = credentials('SSH_KEY')    // SSH private key for EC2
+        SSH_KEY = credentials('SSH_KEY')    // SSH private key (ec2_server.pem)
     }
 
     stages {
@@ -18,18 +18,11 @@ pipeline {
             }
         }
 
-        stage('Set Up Python Environment') {
+        stage('Install Dependencies') {
             steps {
                 sh '''
-                    # Upgrade pip and install virtualenv locally
-                    python3 -m pip install --upgrade pip
-                    python3 -m pip install --user virtualenv
-
-                    # Create and activate virtual environment
-                    python3 -m virtualenv myenv
-                    source myenv/bin/activate
-
-                    # Install dependencies from requirements.txt
+                    # Upgrade pip and install dependencies globally inside the container
+                    pip install --upgrade pip
                     pip install -r requirements.txt
                 '''
             }
@@ -38,7 +31,7 @@ pipeline {
         stage('Retrain the Model') {
             steps {
                 sh '''
-                    source myenv/bin/activate
+                    # Run the training script inside the container
                     python3 train.py  # Train the model (replace with your actual script)
                 '''
             }
@@ -48,17 +41,11 @@ pipeline {
             steps {
                 sh '''
                     # Save the SSH key as ec2_server.pem
-                    echo "$SSH_KEY" | tr -d '\r' > ec2_server.pem
+                    echo "$SSH_KEY" > ec2_server.pem
                     chmod 600 ec2_server.pem
                     
-                    # Ensure the .ssh directory exists
-                    mkdir -p ~/.ssh
-
-                    # Automatically add EC2 host to known_hosts file
-                    ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
-
-                    # Verify the SSH key and create directory if not exists
-                    ssh -i ec2_server.pem $EC2_USER@$EC2_HOST '[ -d /home/$EC2_USER/models ] || sudo mkdir -p /home/$EC2_USER/models'
+                    # Create the models directory on the EC2 instance if it does not exist
+                    ssh -i ec2_server.pem $EC2_USER@$EC2_HOST '[ -d "/home/$EC2_USER/models" ] || sudo mkdir -p /home/$EC2_USER/models'
 
                     # Copy the trained model to EC2
                     scp -i ec2_server.pem models/model_*.pkl $EC2_USER@$EC2_HOST:/home/$EC2_USER/models/
