@@ -2,7 +2,7 @@ pipeline {
     agent {
         docker {
             image 'python:3.10-slim'
-            args '--user root'  // Run the container as root
+            args '--user root --entrypoint /bin/sh'  // Run the container as root
         }
     }
 
@@ -22,6 +22,7 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''
+                    apt update && apt install -y openssh-client
                     # Upgrade pip and install dependencies
                     pip install --upgrade pip
                     pip install -r requirements.txt
