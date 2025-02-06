@@ -21,8 +21,8 @@ pipeline {
                 // Ensure Python and pip are installed inside the Docker container
                 sh '''
                     # Install Python and venv if not present
-                    apt-get update
-                    apt-get install -y python3 python3-pip python3-venv
+                    sudo apt-get update
+                    sudo apt-get install -y python3 python3-pip python3-venv
 
                     # Create the virtual environment
                     python3 -m venv myenv
@@ -52,7 +52,7 @@ pipeline {
                 // Deploy the trained model to the target EC2 instance
                 sh '''
                     echo "$SSH_KEY" | tr -d '\r' > Flaskapp.pem
-                    chmod 600 Flaskapp.pem
+                    sudo chmod 600 Flaskapp.pem
 
                     mkdir -p ~/.ssh
                     ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
