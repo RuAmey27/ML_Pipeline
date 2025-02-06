@@ -2,7 +2,7 @@ pipeline {
     agent {
         docker {
             image 'python:3.10-slim'
-            args '--user root --entrypoint /bin/sh'  // Run the container as root
+            args '--user root --entrypoint /bin/sh'  // Run as root
         }
     }
 
@@ -22,9 +22,13 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''
-                    apt update && apt install -y openssh-client
-                    # Upgrade pip and install dependencies
-                    pip install --upgrade pip
+                    apt-get update && apt-get install -y openssh-client python3-pip
+                    
+                    # Ensure pip is installed and upgraded
+                    python3 -m ensurepip
+                    python3 -m pip install --upgrade pip
+                    
+                    # Install required dependencies
                     pip install -r requirements.txt
                 '''
             }
@@ -41,14 +45,15 @@ pipeline {
         stage('Deploy Model to EC2') {
             steps {
                 sh '''
+                    # Store the SSH key securely
                     echo "$SSH_KEY" > ec2_server.pem
                     chmod 600 ec2_server.pem
                     
-                    # Ensure model directory exists and is accessible
-                    ssh -i ec2_server.pem $EC2_USER@$EC2_HOST "mkdir -p /home/$EC2_USER/models && chmod 755 /home/$EC2_USER/models"
+                    # Ensure the model directory exists on EC2
+                    ssh -o StrictHostKeyChecking=no -i ec2_server.pem $EC2_USER@$EC2_HOST "mkdir -p /home/$EC2_USER/models && chmod 755 /home/$EC2_USER/models"
 
                     # Copy the trained model to EC2
-                    scp -i ec2_server.pem models/model_*.pkl $EC2_USER@$EC2_HOST:/home/$EC2_USER/models/
+                    scp -o StrictHostKeyChecking=no -i ec2_server.pem models/model_*.pkl $EC2_USER@$EC2_HOST:/home/$EC2_USER/models/
                 '''
             }
         }
