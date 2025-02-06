@@ -22,7 +22,7 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''
-                    apt-get update && apt-get install -y openssh-client python3-pip
+                    apt-get update && apt-get install -y openssh-client
                     
                     # Ensure pip is installed and upgraded
                     python3 -m ensurepip
