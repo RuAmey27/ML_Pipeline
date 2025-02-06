@@ -1,16 +1,14 @@
 pipeline {
     agent {
         docker {
-            image 'python:3.10-slim'  // Use Python 3.10 image
+            image 'python:3.10-slim'  // Use a Python 3.10 Docker image
         }
     }
-
     environment {
         EC2_HOST = credentials('EC2_HOST')  // EC2 Instance IP or Hostname
         EC2_USER = credentials('EC2_USER')  // EC2 Instance Username (e.g., ubuntu)
         SSH_KEY = credentials('SSH_KEY')    // SSH private key for EC2
     }
-
     stages {
         stage('Checkout Repository') {
             steps {
@@ -20,10 +18,19 @@ pipeline {
 
         stage('Set Up Python Environment') {
             steps {
-                // Create a virtual environment and install dependencies inside Docker container
+                // Ensure Python and pip are installed inside the Docker container
                 sh '''
-                    python -m venv myenv
+                    # Install Python and venv if not present
+                    apt-get update
+                    apt-get install -y python3 python3-pip python3-venv
+
+                    # Create the virtual environment
+                    python3 -m venv myenv
+
+                    # Activate the virtual environment
                     source myenv/bin/activate
+
+                    # Install dependencies from requirements.txt
                     pip install --upgrade pip
                     pip install -r requirements.txt
                 '''
@@ -32,7 +39,7 @@ pipeline {
 
         stage('Retrain the Model') {
             steps {
-                // Retrain the model inside the Docker container
+                // Retrain the model using the Python training script
                 sh '''
                     source myenv/bin/activate
                     python3 train.py  // Retrain the model (replace with your actual script)
@@ -46,8 +53,10 @@ pipeline {
                 sh '''
                     echo "$SSH_KEY" | tr -d '\r' > Flaskapp.pem
                     chmod 600 Flaskapp.pem
+
                     mkdir -p ~/.ssh
                     ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
+
                     ssh -i Flaskapp.pem $EC2_USER@$EC2_HOST '[ -d /home/$EC2_USER/models ] || sudo mkdir -p /home/$EC2_USER/models'
                     scp -i Flaskapp.pem models/model_*.pkl $EC2_USER@$EC2_HOST:/home/$EC2_USER/models/
                 '''
