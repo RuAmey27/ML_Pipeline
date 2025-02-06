@@ -9,7 +9,7 @@ pipeline {
     environment {
         EC2_HOST = credentials('EC2_HOST')          // EC2 instance IP
         EC2_USER = credentials('EC2_USER')          // EC2 username (e.g., ubuntu)
-        SSH_KEY_ID = credentials('SSH_KEY_ID')      // ID of the SSH private key credential in Jenkins
+        SSH_KEY_ID = credentials('cbde2a97-22ad-4d2c-8d12-932d1fecda79')      // ID of the SSH private key credential in Jenkins
     }
 
     stages {
