@@ -53,7 +53,7 @@ pipeline {
                     ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
 
                     # Verify the SSH key and create directory if not exists
-                    ssh -i ec2_server.pem $EC2_USER@$EC2_HOST '[ -d /home/$EC2_USER/models ] || sudo mkdir -p /home/$EC2_USER/models'
+                    ssh -i ec2_server.pem $EC2_USER@$EC2_HOST 'sudo mkdir -p /home/$EC2_USER/models'
 
                     # Copy the trained model to EC2
                     scp -i ec2_server.pem models/model_*.pkl $EC2_USER@$EC2_HOST:/home/$EC2_USER/models/
