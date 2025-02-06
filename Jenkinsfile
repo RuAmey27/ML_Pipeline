@@ -44,7 +44,7 @@ pipeline {
 
         stage('Deploy Model to EC2') {
             steps {
-                sshagent(credentials: ["${SSH_KEY_ID}"]) {
+                sshagent(credentials: [cbde2a97-22ad-4d2c-8d12-932d1fecda79]) {
                     sh '''
                         # Ensure the model directory exists on EC2
                         ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} "mkdir -p /home/${EC2_USER}/models && chmod 755 /home/${EC2_USER}/models"
